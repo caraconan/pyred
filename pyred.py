@@ -21,6 +21,7 @@
 import os
 import requests
 import json
+from base64 import b64decode
 
 class Redmine:
 
@@ -46,9 +47,9 @@ class Redmine:
         with open(pass_file) as f:
             for line in f.readlines():
                 if line.startswith("username"):
-                    username = line.split("=")[1].strip()
+                    username = b64decode(line.split(" ")[1].strip())
                 if line.startswith("password"):
-                    password = line.split("=")[1].strip()
+                    password = b64decode(line.split(" ")[1].strip())
 
         if username == None or password == None:
                 raise TypeError("pass_file missing lines 'username=XX' and 'password=XX'")
@@ -89,7 +90,10 @@ class Redmine:
 
     def getProjects(self):
         r = self.session.get(self.get_project_url(), data=json.dumps({'limit': 999}))
-        return [self.Project(data) for data in r.json()['projects']]
+        try:
+            return [self.Project(data) for data in r.json()['projects']]
+        except KeyError:
+            raise TypeError(r.json()['errors']) 
 
     def getIssue(self, issue_id):
         r = self.session.get(self.get_issue_url(issue_id))
@@ -107,7 +111,10 @@ class Redmine:
             criteria = ({'limit': 100})
         r = self.session.get(self.get_issue_url(),
                        data=json.dumps(criteria))
-        return [self.Issue(data) for data in r.json()['issues']]
+        try:
+            return [self.Issue(data) for data in r.json()['issues']]
+        except KeyError:
+            raise TypeError(r.json()['errors']) 
 
     def getTimeEntries(self, criteria=None):
         ''' Get Time Entries of a particular Issue filtered by criteria '''
@@ -117,7 +124,10 @@ class Redmine:
             criteria = ({'limit': 100})
         r = self.session.get(self.get_time_entry_url(),
                        data=json.dumps(criteria))
-        return [self.TimeEntry(data) for data in r.json()['time_entries']]
+        try:
+            return [self.TimeEntry(data) for data in r.json()['time_entries']]
+        except KeyError:
+            raise TypeError(r.json()['errors']) 
 
     def updateIssue(self, issue_id, data):
         print "Updating issue {id} with data:{data}".format(
