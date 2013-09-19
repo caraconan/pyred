@@ -129,6 +129,16 @@ class Redmine:
         except KeyError:
             raise TypeError(r.json()['errors']) 
 
+    def getTimeEntries(self, criteria=None):
+        ''' Get Time Entries of a particular Issue filtered by criteria '''
+        if criteria and not 'limit' in criteria:
+            criteria.update({'limit': 100})
+        elif not criteria:
+            criteria = ({'limit': 100})
+        r = self.session.get(self.get_time_entry_url(),
+                       data=json.dumps(criteria))
+        return [self.TimeEntry(data) for data in r.json()['time_entries']]
+
     def updateIssue(self, issue_id, data):
         print "Updating issue {id} with data:{data}".format(
             id=issue_id,
@@ -192,4 +202,3 @@ class Redmine:
     class TimeEntry(RedmineObj):
         def __init__(self, data):
             super(Redmine.TimeEntry, self).__init__(data, 'time_entry')
-
